@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import cn from 'classnames';
 import './App.scss';
 
@@ -18,13 +18,16 @@ const categories: Category[] = categoriesFromServer.map(category => ({
   owner: getUserById(category.ownerId),
 }));
 
-const products: Product[] = productsFromServer.map(product => ({
+const productsWithCategories: Product[] = productsFromServer.map(product => ({
   ...product,
   category: categories.find(category => category.id === product.categoryId)
     || null,
 }));
 
 export const App: React.FC = () => {
+  const [products, setProducts] = useState(productsWithCategories);
+  const [activeOwner, setActiveOwner] = useState(0);
+
   return (
     <div className="section">
       <div className="container">
@@ -38,31 +41,39 @@ export const App: React.FC = () => {
               <a
                 data-cy="FilterAllUsers"
                 href="#/"
+                className={cn(
+                  { 'is-active': activeOwner === 0 },
+                )}
+                onClick={() => setActiveOwner(0)}
               >
                 All
               </a>
 
-              <a
-                data-cy="FilterUser"
-                href="#/"
-              >
-                User 1
-              </a>
-
-              <a
-                data-cy="FilterUser"
-                href="#/"
-                className="is-active"
-              >
-                User 2
-              </a>
-
-              <a
-                data-cy="FilterUser"
-                href="#/"
-              >
-                User 3
-              </a>
+              {
+                usersFromServer.map(user => {
+                  return (
+                    <a
+                      data-cy="FilterUser"
+                      href="#/"
+                      onClick={() => {
+                        setActiveOwner(user.id);
+                        if (user.id === activeOwner) {
+                          setProducts({
+                            ...productsWithCategories.filter(product => (
+                              product.category?.ownerId === activeOwner)),
+                          });
+                        }
+                      }}
+                      className={cn(
+                        { 'is-active': activeOwner === user.id },
+                      )}
+                      key={user.id}
+                    >
+                      {user.name}
+                    </a>
+                  );
+                })
+              }
             </p>
 
             <div className="panel-block">
@@ -105,6 +116,7 @@ export const App: React.FC = () => {
                     data-cy="Category"
                     className="button mr-2 my-1"
                     href="#/"
+                    key={category.id}
                   >
                     {category.title}
                   </a>
@@ -192,7 +204,7 @@ export const App: React.FC = () => {
                   const isMale = product.category?.owner?.sex === 'm';
 
                   return (
-                    <tr data-cy="Product">
+                    <tr data-cy="Product" key={product.id}>
                       <td className="has-text-weight-bold" data-cy="ProductId">
                         {product.id}
                       </td>
@@ -204,8 +216,8 @@ export const App: React.FC = () => {
                         data-cy="ProductUser"
                         className={
                           cn(
-                            {'has-text-link': isMale},
-                            {'has-text-danger': !isMale}
+                            { 'has-text-link': isMale },
+                            { 'has-text-danger': !isMale },
                           )
                         }
                       >
